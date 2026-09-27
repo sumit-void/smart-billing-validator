@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Billing Validator</title>
+    <meta name="description" content="Smart Billing Validator — Decision Support System for billing verification">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<!-- ═══ SIDEBAR ═══ -->
+<nav class="sidebar">
+    <div class="logo">
+        <span class="logo-icon">💳</span>
+        <h1>Smart Billing</h1>
+        <span class="logo-sub">VALIDATOR</span>
+    </div>
+    <div class="nav-links">
+        <a href="#" class="nav-link active" data-tab="dashboard">📊 Dashboard</a>
+        <a href="#" class="nav-link" data-tab="add-bill">➕ Add Bill</a>
+        <a href="#" class="nav-link" data-tab="products">📦 Products</a>
+        <a href="#" class="nav-link" data-tab="reports">📈 Reports</a>
+    </div>
+    <button class="validate-all-btn" onclick="validateAll()">🔍 Validate All</button>
+    <span class="version">v1.0 • Python Project</span>
+</nav>
+
+<!-- ═══ MAIN CONTENT ═══ -->
+<main class="content">
+
+    <!-- ─── DASHBOARD TAB ─── -->
+    <section id="tab-dashboard" class="tab active">
+        <div class="page-header">
+            <h2>📊 Dashboard</h2>
+            <button class="btn btn-secondary" onclick="loadDashboard()">🔄 Refresh</button>
+        </div>
+
+        <div class="stats-row" id="stats-cards"></div>
+
+        <div class="two-col">
+            <div class="col">
+                <h3 class="section-title">📋 Recent Bills</h3>
+                <table class="data-table" id="recent-bills-table">
+                    <thead><tr><th>Bill #</th><th>Vendor</th><th>Date</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="col">
+                <h3 class="section-title">💡 Recommendations</h3>
+                <div id="recommendations"></div>
+
+                <h3 class="section-title" style="margin-top:20px;">📌 Status Breakdown</h3>
+                <div id="status-breakdown"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── ADD BILL TAB ─── -->
+    <section id="tab-add-bill" class="tab">
+        <div class="page-header">
+            <h2>➕ New Bill Entry</h2>
+        </div>
+
+        <div class="card">
+            <h3 class="section-title">Bill Details</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Bill Number</label>
+                    <input type="text" id="bill-number" placeholder="e.g. INV-2026-001">
+                </div>
+                <div class="form-group">
+                    <label>Vendor Name</label>
+                    <input type="text" id="bill-vendor" placeholder="e.g. TechMart India">
+                </div>
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" id="bill-date">
+                </div>
+                <div class="form-group">
+                    <label>Total Amount (₹)</label>
+                    <input type="number" id="bill-total" step="0.01" placeholder="Auto-calculated if empty">
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="flex-between">
+                <h3 class="section-title">📦 Line Items</h3>
+                <div>
+                    <button class="btn btn-primary btn-sm" onclick="addLineItem()">+ Add Item</button>
+                    <button class="btn btn-danger btn-sm" onclick="removeLastItem()">- Remove Last</button>
+                </div>
+            </div>
+
+            <div class="form-row" style="margin-top:12px;">
+                <div class="form-group">
+                    <label>Product</label>
+                    <select id="item-product"><option value="">-- Select --</option></select>
+                </div>
+                <div class="form-group" style="max-width:80px">
+                    <label>Qty</label>
+                    <input type="number" id="item-qty" value="1" min="1">
+                </div>
+                <div class="form-group">
+                    <label>Price (₹)</label>
+                    <input type="number" id="item-price" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Tax (₹)</label>
+                    <input type="number" id="item-tax" step="0.01">
+                </div>
+            </div>
+
+            <table class="data-table" id="line-items-table">
+                <thead><tr><th>Product</th><th>Qty</th><th>Price</th><th>Tax</th><th>Total</th></tr></thead>
+                <tbody></tbody>
+            </table>
+            <p class="items-total" id="items-total">Items Total: ₹0.00</p>
+        </div>
+
+        <div id="validation-results"></div>
+
+        <div class="btn-row">
+            <button class="btn btn-success" onclick="submitBill()">✓ Validate & Save</button>
+            <button class="btn btn-danger" onclick="clearBillForm()">🗑️ Clear</button>
+        </div>
+    </section>
+
+    <!-- ─── PRODUCTS TAB ─── -->
+    <section id="tab-products" class="tab">
+        <div class="page-header">
+            <h2>📦 Product Catalog</h2>
+        </div>
+
+        <div class="controls-row">
+            <input type="text" id="product-search" class="search-input" placeholder="🔍 Search products..." oninput="searchProducts()">
+            <select id="product-cat-filter" onchange="filterProductsCat()">
+                <option value="">All Categories</option>
+            </select>
+        </div>
+
+        <table class="data-table" id="products-table">
+            <thead><tr><th>ID</th><th>Name</th><th>Category</th><th>Price</th><th>Tax %</th><th>Actions</th></tr></thead>
+            <tbody></tbody>
+        </table>
+
+        <div class="card" style="margin-top:16px;">
+            <h3 class="section-title" id="product-form-title">➕ Add New Product</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="prod-name">
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <input type="text" id="prod-category">
+                </div>
+                <div class="form-group">
+                    <label>Price (₹)</label>
+                    <input type="number" id="prod-price" step="0.01">
+                </div>
+                <div class="form-group" style="max-width:100px">
+                    <label>Tax %</label>
+                    <input type="number" id="prod-tax" step="0.1">
+                </div>
+            </div>
+            <div class="btn-row">
+                <button class="btn btn-success" onclick="saveProduct()">💾 Save</button>
+                <button class="btn btn-secondary" id="cancel-edit-btn" style="display:none" onclick="cancelProductEdit()">Cancel</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── REPORTS TAB ─── -->
+    <section id="tab-reports" class="tab">
+        <div class="page-header">
+            <h2>📊 Reports & Analytics</h2>
+        </div>
+
+        <div class="report-tabs">
+            <button class="report-tab active" onclick="loadReport('category', this)">💰 By Category</button>
+            <button class="report-tab" onclick="loadReport('vendor', this)">🏪 Vendors</button>
+            <button class="report-tab" onclick="loadReport('monthly', this)">📈 Monthly</button>
+            <button class="report-tab" onclick="loadReport('errors', this)">🔴 Errors</button>
+            <button class="report-tab" onclick="loadReport('price', this)">💡 Prices</button>
+        </div>
+
+        <div id="report-content" class="card"></div>
+    </section>
+
+    <!-- ─── BILL DETAIL MODAL ─── -->
+    <div id="bill-modal" class="modal" style="display:none">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Bill Details</h2>
+                <button class="btn btn-secondary" onclick="closeModal()">✕ Close</button>
+            </div>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+</main>
+
+<script src="/static/script.js"></script>
+</body>
+</html>
